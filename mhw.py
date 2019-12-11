@@ -18,6 +18,8 @@ import requests
 
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 
+TOKEN = "827496100:AAEohD9TDG-F6fefu6MTqnuA86ktBdEta94" #mhwdb token
+#TOKEN = '180665590:AAGEXQVVWTzpou9TBekb8oq59cjz2Fxp_gY' #ascention token
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
@@ -59,7 +61,8 @@ def search(update, context):
 
 def monsters(update, context):
     if len(context.args) == 0:
-        update.message.reply_text("Please input monster name to search.")
+        update.message.reply_text("Command syntax is /monsters <monster name>")
+        return
     category = 'monsters'
     name = " ".join(context.args)
     weakness = []
@@ -108,7 +111,7 @@ def main():
     # Create the Updater and pass it your bot's token.
     # Make sure to set use_context=True to use the new context based callbacks
     # Post version 12 this will no longer be necessary
-    updater = Updater("827496100:AAEohD9TDG-F6fefu6MTqnuA86ktBdEta94", use_context=True)
+    updater = Updater(TOKEN, use_context=True)
 
     # Get the dispatcher to register handlers
     dp = updater.dispatcher
