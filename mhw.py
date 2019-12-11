@@ -81,13 +81,15 @@ def monsters(update, context):
         description = result.get('description')
         monster_name = result.get('name')
 
-        monster_name_msg = "*Monster Name*: {}".format(monster_name)
+        monster_name_msg = "*Name*: {}".format(monster_name)
         description_msg = "*Description*: {}".format(description)
         weakness_msg = "*Weaknesses*: {}".format(monster_weakness)
         ailments_msg = "*Ailments:* {}".format(monster_ailments)
 
         message = "{} \n{} \n{} \n{}".format(monster_name_msg,description_msg,weakness_msg,ailments_msg)
         update.message.reply_markdown(message, quote=True)
+    elif name.startswith("@"):
+        return
     else:
         update.message.reply_text("Unable to find this monster! Iceborne data not yet updated.")
 
