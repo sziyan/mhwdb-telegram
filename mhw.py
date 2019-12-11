@@ -89,7 +89,7 @@ def monsters(update, context):
         message = "{} \n{} \n{} \n{}".format(monster_name_msg,description_msg,weakness_msg,ailments_msg)
         update.message.reply_markdown(message, quote=True)
     else:
-        update.message.reply_text("Unable to find this monster!")
+        update.message.reply_text("Unable to find this monster! Iceborne data not yet updated.")
 
 # def echo(update, context):
 #     """Echo the user message."""
