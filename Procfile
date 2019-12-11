@@ -1,1 +1,1 @@
-web: python mhw.py 
+worker: python mhw.py 
