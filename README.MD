@@ -1,4 +1,4 @@
-#Monster Hunter World Database telegram bot#
+##Monster Hunter World Database telegram bot##
 
 Requirements:
 - requests
