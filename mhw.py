@@ -65,7 +65,7 @@ def start(update, context):
 
 def help(update, context):
     """Send a message when the command /help is issued."""
-    update.message.reply_text('My available commands are: \n /monsters <monster name> - Search for monster')
+    update.message.reply_text('My available commands are: \n /monsters <monster name> - Search for monster\n /weapons <weapon name> - Search of weapons')
 
 def search(update, context):
     valid = False
@@ -188,8 +188,10 @@ def weapons(update, context):
         #message = "*Name:* {} \n *Type:* {} \n *Rarity:* {} \n <*Attack:* {} \n *Element:* {} \n *Mats:* {}".format(weapon_name,weapon_type,weapon_rarity,weapon_display,elements_msg,mats_msg)
         message = "<b>Type:</b> {} \n<b>Rarity:</b> {} \n<b>Slots:</b> {} \n<b>Previous:</b> {} \n<b>Next:</b> {} \n<b>Attack:</b> {} \n<b>Element:</b> {} \n<b>Materials:</b> {}".format(weapon_type,weapon_rarity,slots_msg,previous_weapon,next_weapon_msg, weapon_display,elements_msg,mats_msg)
         update.message.reply_html("<b>Name:</b> <a href='{}'>{}</a> \n{}".format(asset_link,weapon_name,message))
-
-
+    elif name.startswith("@"):
+        return
+    else:
+        update.message.reply_text("Unable to find this weapons! Iceborne data not yet updated.")
 
 # def echo(update, context):
 #     """Echo the user message."""
