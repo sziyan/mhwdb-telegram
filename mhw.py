@@ -193,6 +193,10 @@ def weapons(update, context):
     else:
         update.message.reply_text("Unable to find this weapons! Iceborne data not yet updated.")
 
+def items(update,context):
+    update.message.reply_text("Aww")
+
+
 # def echo(update, context):
 #     """Echo the user message."""
 #     update.message.reply_text(update.message.text)
@@ -219,6 +223,7 @@ def main():
     dp.add_handler(CommandHandler("search", search))
     dp.add_handler(CommandHandler("monsters", monsters))
     dp.add_handler(CommandHandler('weapons', weapons))
+    dp.add_handler(CommandHandler('items', items))
 
     # on noncommand i.e message - echo the message on Telegram
     #dp.add_handler(MessageHandler(Filters.text, echo))
