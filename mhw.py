@@ -65,7 +65,7 @@ def start(update, context):
 
 def help(update, context):
     """Send a message when the command /help is issued."""
-    update.message.reply_text('My available commands are: \n /monsters <monster name> - Search for monster\n /weapons <weapon name> - Search of weapons')
+    update.message.reply_text('My available commands are: \n/monsters <monster name> - Search for monster\n/weapons <weapon name> - Search of weapons \n/items <item name> - Search item')
 
 def search(update, context):
     valid = False
@@ -194,8 +194,25 @@ def weapons(update, context):
         update.message.reply_text("Unable to find this weapons! Iceborne data not yet updated.")
 
 def items(update,context):
-    update.message.reply_text("Aww")
+    # if user input command with no arguments (item names) after the command
+    if len(context.args) == 0:
+        update.message.reply_text("Command syntax is /items <item name>")
+        return
+    # declaration
+    category = 'items'
+    name = " ".join(context.args)  # convert arguments from user message into 1 single string
+    result = search_db(category, name)  # perform search on database
 
+    if result != 'invalid':
+        name = result.get('name')
+        description = result.get('description')
+        rarity = result.get('rarity')
+        carry = result.get('carryLimit')
+        value = result.get('value')
+        message = "*Name:* {} \n*Description:* {} \n*Rarity:* {} \n*Carry Limit:* {} \n*Value:* {}".format(name,description,rarity,carry,value)
+        update.message.reply_markdown(message)
+    else:
+        update.message.reply_text("Unable to find item. Iceborne data not yet updated.")
 
 # def echo(update, context):
 #     """Echo the user message."""
