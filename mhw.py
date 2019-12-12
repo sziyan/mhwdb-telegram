@@ -18,8 +18,8 @@ import requests
 
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 
-TOKEN = "827496100:AAEohD9TDG-F6fefu6MTqnuA86ktBdEta94" #mhwdb token
-#TOKEN = '180665590:AAGEXQVVWTzpou9TBekb8oq59cjz2Fxp_gY' #ascension token
+#TOKEN = "827496100:AAEohD9TDG-F6fefu6MTqnuA86ktBdEta94" #mhwdb token
+TOKEN = '180665590:AAGEXQVVWTzpou9TBekb8oq59cjz2Fxp_gY' #ascension token
 
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -32,11 +32,29 @@ def search_db(category,name): #search database with arguments given
     #'https://mhw-db.com/events?q={"platform":"console"}'
     query = 'https://mhw-db.com/' + category + '?q={"name":"' + name + '"}'
     r = requests.get(query)
-    if len(r.json()) > 0: #if at least 1 result
-        reply = r.json()[0] #get first result only
+    result = r.json()
+    if len(result) > 0: #if at least 1 result
+        if type(result) is list:
+            reply = result[0] #get first result only
+        elif type(result) is dict:
+            reply = result
+        else:
+            print('error in json type')
+            return 'invalid'
     else: #no result meaning search failed
         reply = "invalid"
     return reply
+
+def get_weapon_name(weapon_id):
+    query = 'https://mhw-db.com/weapons/' + str(weapon_id)
+    r = requests.get(query)
+    result = r.json()
+    weapon_name = result.get('name')
+    return weapon_name
+
+def getassetlink(url):
+    link = url.replace("\/","/")
+    return link
 
 # Define a few command handlers. These usually take the two arguments update and
 # context. Error handlers also receive the raised TelegramError object in error.
@@ -86,8 +104,8 @@ def monsters(update, context):
             ailments.append(a.get('name')) #append all ailments name into a list
 
         #convert all list into string and declare all required fields
-        monster_ailments = ",".join(ailments)
-        monster_weakness = ','.join(weakness)
+        monster_ailments = ", ".join(ailments)
+        monster_weakness = ', '.join(weakness)
         description = result.get('description')
         monster_name = result.get('name')
 
@@ -104,6 +122,74 @@ def monsters(update, context):
         return
     else:
         update.message.reply_text("Unable to find this monster! Iceborne data not yet updated.")
+
+def weapons(update, context):
+    # if user input command with no arguments (weapons names) after the command
+    if len(context.args) == 0:
+        update.message.reply_text("Command syntax is /weapons <weapon name>")
+        return
+    # declaration
+    category = 'weapons'
+    slots = []
+    mats = []
+    elements = []
+    name = " ".join(context.args)  # convert arguments from user message into 1 single string
+    result = search_db(category, name)  # perform search on database
+
+    if result != "invalid":
+        weapon_name = result.get('name')
+        weapon_type = result.get('type')
+        weapon_rarity = result.get('rarity')
+        weapon_attack = result.get('attack')
+        weapon_display = weapon_attack.get('display')
+        previous_weapon = ""
+
+        crafting = result.get('crafting')
+        craftable = crafting.get('craftable')
+        next_weapon = []
+        raw_asset_link = result.get('assets').get('image')
+        asset_link = getassetlink(raw_asset_link)
+        if craftable is False:
+            upgrade_mats = crafting.get('upgradeMaterials')
+            for m in upgrade_mats:
+                quantity = str(m.get('quantity'))
+                mat_name = m.get('item').get('name')
+                mat_msg = mat_name + ' x' + quantity + ' '
+                mats.append(mat_msg)
+        elif craftable is True:
+            crafting_mats = crafting.get('craftingMaterials')
+            for m in crafting_mats:
+                quantity = str(m.get('quantity'))
+                mat_name = m.get('item').get('name')
+                mat_msg = mat_name + ' x' + quantity
+                mats.append(mat_msg)
+        if crafting.get('previous') != 'null':
+            weapon_id = crafting.get('previous')
+            previous_weapon = get_weapon_name(weapon_id)
+        if (len(crafting.get('branches')) > 0):
+            for weapon_id in crafting.get('branches'):
+                next_weapon_name = get_weapon_name(weapon_id)
+                next_weapon.append(next_weapon_name)
+        if result.get('elements'):
+            for e in result.get('elements'):
+                element_type = e.get('type')
+                damage = e.get('damage')
+                element_msg = "{}({})".format(element_type,damage)
+                elements.append(element_msg)
+        if (len(result.get('slots')) > 0 ):
+            listofslots = result.get('slots')
+            for i in range(0,len(listofslots)):
+                slots.append(str(listofslots[i].get('rank')))
+
+        elements_msg = ",".join(elements)
+        mats_msg = ", ".join(mats)
+        slots_msg = ", ".join(slots)
+        next_weapon_msg = ", ".join(next_weapon)
+        #message = "*Name:* {} \n *Type:* {} \n *Rarity:* {} \n <*Attack:* {} \n *Element:* {} \n *Mats:* {}".format(weapon_name,weapon_type,weapon_rarity,weapon_display,elements_msg,mats_msg)
+        message = "<b>Type:</b> {} \n<b>Rarity:</b> {} \n<b>Slots:</b> {} \n<b>Previous:</b> {} \n<b>Next:</b> {} \n<b>Attack:</b> {} \n<b>Element:</b> {} \n<b>Materials:</b> {}".format(weapon_type,weapon_rarity,slots_msg,previous_weapon,next_weapon_msg, weapon_display,elements_msg,mats_msg)
+        update.message.reply_html("<b>Name:</b> <a href='{}'>{}</a> \n{}".format(asset_link,weapon_name,message))
+
+
 
 # def echo(update, context):
 #     """Echo the user message."""
@@ -130,6 +216,7 @@ def main():
     dp.add_handler(CommandHandler("help", help))
     dp.add_handler(CommandHandler("search", search))
     dp.add_handler(CommandHandler("monsters", monsters))
+    dp.add_handler(CommandHandler('weapons', weapons))
 
     # on noncommand i.e message - echo the message on Telegram
     #dp.add_handler(MessageHandler(Filters.text, echo))
