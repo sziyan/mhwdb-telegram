@@ -19,7 +19,8 @@ import requests
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 
 TOKEN = "827496100:AAEohD9TDG-F6fefu6MTqnuA86ktBdEta94" #mhwdb token
-#TOKEN = '180665590:AAGEXQVVWTzpou9TBekb8oq59cjz2Fxp_gY' #ascention token
+#TOKEN = '180665590:AAGEXQVVWTzpou9TBekb8oq59cjz2Fxp_gY' #ascension token
+
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
@@ -27,13 +28,13 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 logger = logging.getLogger(__name__)
 database_category = ["ailments", "armor", "armor_sets", "charms", "decorations", "events", "items", "locations", "monsters", "skills", "weapons"]
 
-def search_db(category,name):
+def search_db(category,name): #search database with arguments given
     #'https://mhw-db.com/events?q={"platform":"console"}'
     query = 'https://mhw-db.com/' + category + '?q={"name":"' + name + '"}'
     r = requests.get(query)
-    if len(r.json()) > 0:
-        reply = r.json()[0]
-    else:
+    if len(r.json()) > 0: #if at least 1 result
+        reply = r.json()[0] #get first result only
+    else: #no result meaning search failed
         reply = "invalid"
     return reply
 
@@ -60,35 +61,43 @@ def search(update, context):
         update.message.reply_text(result)
 
 def monsters(update, context):
+    #if user input command with no arguments (monster names) after the command
     if len(context.args) == 0:
         update.message.reply_text("Command syntax is /monsters <monster name>")
         return
+    #declaration
     category = 'monsters'
-    name = " ".join(context.args)
     weakness = []
     ailments = []
-    result = search_db(category, name)
+    name = " ".join(context.args) #convert arguments from user message into 1 single string
+    result = search_db(category, name) #perfrom search on database
 
+    #if database returns result
     if result != "invalid":
-        all_weakness = result.get('weaknesses')
+        all_weakness = result.get('weaknesses') #grab all weaknesses field into 1 list
         for w in all_weakness:
-            if w.get('stars') > 2:
-                weakness.append(w.get('element'))
+            if w.get('stars') > 2: #if weakness is more then 2 stars(effective)
+                msg = w.get('element') + '(' + str(w.get('stars')) + ' stars)' #append to string for later processing
+                weakness.append(msg)
 
+        #get all ailments fields into 1 list
         all_ailments = result.get('ailments')
         for a in all_ailments:
-            ailments.append(a.get('name'))
+            ailments.append(a.get('name')) #append all ailments name into a list
 
+        #convert all list into string and declare all required fields
         monster_ailments = ",".join(ailments)
         monster_weakness = ','.join(weakness)
         description = result.get('description')
         monster_name = result.get('name')
 
+        #declar messages to output
         monster_name_msg = "*Name*: {}".format(monster_name)
         description_msg = "*Description*: {}".format(description)
         weakness_msg = "*Weaknesses*: {}".format(monster_weakness)
         ailments_msg = "*Ailments:* {}".format(monster_ailments)
 
+        #output message
         message = "{} \n{} \n{} \n{}".format(monster_name_msg,description_msg,weakness_msg,ailments_msg)
         update.message.reply_markdown(message, quote=True)
     elif name.startswith("@"):
