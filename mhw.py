@@ -284,7 +284,7 @@ def deco(update,context):
 
 def skills(update,context):
     if len(context.args) == 0:
-        update.message.reply_text("Command syntax is /items <item name>")
+        update.message.reply_text("Command syntax is /skills <skill name>")
         return
 
     # declaration
@@ -299,11 +299,11 @@ def skills(update,context):
         for r in ranks:
             level = r.get('level')
             description = r.get('description')
-            rank_details.append("Level: {} \nDescription: {}".format(level, description))
+            rank_details.append("*Level {}* \n{}".format(level, description))
 
         #convert to messsage
         rank_details_message = "\n".join(rank_details)
-        message = "*Name:* {} \n*Description:* {} \n*Ranks:* \n{}".format(skill_name,description,rank_details_message)
+        message = "*Name:* {} \n{}".format(skill_name,rank_details_message)
         update.message.reply_markdown(message)
     else:
         update.message.reply_text("Unable to find decoration. Iceborne data not yet updated.")
