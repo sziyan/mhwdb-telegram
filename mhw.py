@@ -15,35 +15,65 @@ bot.
 
 import logging
 import requests
+import urllib.parse
 
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 
-TOKEN = "827496100:AAEohD9TDG-F6fefu6MTqnuA86ktBdEta94" #mhwdb token
-#TOKEN = '180665590:AAGEXQVVWTzpou9TBekb8oq59cjz2Fxp_gY' #ascension token
+#TOKEN = "827496100:AAEohD9TDG-F6fefu6MTqnuA86ktBdEta94" #mhwdb token
+TOKEN = '180665590:AAGEXQVVWTzpou9TBekb8oq59cjz2Fxp_gY' #ascension token
 
 # Enable logging
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+logging.basicConfig(format='LOG: %(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
 
 logger = logging.getLogger(__name__)
 database_category = ["ailments", "armor", "armor_sets", "charms", "decorations", "events", "items", "locations", "monsters", "skills", "weapons"]
 
 def search_db(category,name): #search database with arguments given
-    #'https://mhw-db.com/events?q={"platform":"console"}'
-    query = 'https://mhw-db.com/' + category + '?q={"name":"' + name + '"}'
+    name_parse = urllib.parse.quote(name)
+    query = 'https://mhw-db.com/' + category + '?q={"name":"' + name_parse + '"}'
     r = requests.get(query)
     result = r.json()
     if len(result) > 0: #if at least 1 result
-        if type(result) is list:
+        if type(result) is list: #if result is list aka more than 1 result
             reply = result[0] #get first result only
-        elif type(result) is dict:
+        elif type(result) is dict: #if result is dict type
             reply = result
         else:
             print('error in json type')
             return 'invalid'
     else: #no result meaning search failed
-        reply = "invalid"
+        if category == 'decorations':
+            check_name = name.split()
+            if int(name[-1]) <=4:
+                level = int(name[-1])
+                reply = search_deco(name,level)
+            elif int(name[-1]) >= 5 and check_name[-2] == "Jewel":
+                level = -1  # meaning search all jewel type, still cant find
+                reply = search_deco(name, level)
+            else:
+                reply = 'invalid'
+        else:
+            reply = "invalid"
     return reply
+
+def search_deco(name,level): #search thru deco
+    name_list = name.split()
+    if 0 < level <= 4:
+        level+=1
+        name_list[-1] = str(level)
+        name = " ".join(name_list)
+        reply = search_db('decorations', name)
+    elif level == -1:
+        level = 1
+        name_list[-2] = 'Jewel+'
+        name_list[-1] = str(level)
+        name = " ".join(name_list)
+        reply = search_db('decorations',name)
+    else:
+        reply = 'invalid'
+    return reply
+
 
 def get_weapon_name(weapon_id):
     query = 'https://mhw-db.com/weapons/' + str(weapon_id)
@@ -65,7 +95,7 @@ def start(update, context):
 
 def help(update, context):
     """Send a message when the command /help is issued."""
-    update.message.reply_text('My available commands are: \n/monsters <monster name> - Search for monster\n/weapons <weapon name> - Search of weapons \n/items <item name> - Search item')
+    update.message.reply_text('Press the "/" button on your keyboard to checkout what I am capable of!')
 
 def search(update, context):
     valid = False
@@ -136,7 +166,7 @@ def weapons(update, context):
     name = " ".join(context.args)  # convert arguments from user message into 1 single string
     result = search_db(category, name)  # perform search on database
 
-    if result != "invalid":
+    if result != "invalid": #if result is valid
         weapon_name = result.get('name')
         weapon_type = result.get('type')
         weapon_rarity = result.get('rarity')
@@ -144,39 +174,39 @@ def weapons(update, context):
         weapon_display = weapon_attack.get('display')
         previous_weapon = ""
 
-        crafting = result.get('crafting')
+        crafting = result.get('crafting') #get all variables in crafting json
         craftable = crafting.get('craftable')
         next_weapon = []
         raw_asset_link = result.get('assets').get('image')
-        asset_link = getassetlink(raw_asset_link)
-        if craftable is False:
+        asset_link = getassetlink(raw_asset_link) #output asset link in http readable format
+        if craftable is False: #weapon can only be upgraded
             upgrade_mats = crafting.get('upgradeMaterials')
-            for m in upgrade_mats:
+            for m in upgrade_mats: #get a list of all the mats required
                 quantity = str(m.get('quantity'))
                 mat_name = m.get('item').get('name')
                 mat_msg = mat_name + ' x' + quantity + ' '
                 mats.append(mat_msg)
-        elif craftable is True:
+        elif craftable is True: #weapon can be crafted
             crafting_mats = crafting.get('craftingMaterials')
-            for m in crafting_mats:
+            for m in crafting_mats: #get a list of all the mats required
                 quantity = str(m.get('quantity'))
                 mat_name = m.get('item').get('name')
                 mat_msg = mat_name + ' x' + quantity
                 mats.append(mat_msg)
-        if crafting.get('previous') != 'null':
+        if crafting.get('previous') != 'null': #weapon has a prior weapon that it is upgraded from
             weapon_id = crafting.get('previous')
-            previous_weapon = get_weapon_name(weapon_id)
-        if (len(crafting.get('branches')) > 0):
+            previous_weapon = get_weapon_name(weapon_id) #get weapon id and output weapon name
+        if (len(crafting.get('branches')) > 0): #has upgrade tree
             for weapon_id in crafting.get('branches'):
                 next_weapon_name = get_weapon_name(weapon_id)
                 next_weapon.append(next_weapon_name)
-        if result.get('elements'):
+        if result.get('elements'): #if weapon has element
             for e in result.get('elements'):
                 element_type = e.get('type')
                 damage = e.get('damage')
                 element_msg = "{}({})".format(element_type,damage)
                 elements.append(element_msg)
-        if (len(result.get('slots')) > 0 ):
+        if (len(result.get('slots')) > 0 ): #weapon has decoration slots
             listofslots = result.get('slots')
             for i in range(0,len(listofslots)):
                 slots.append(str(listofslots[i].get('rank')))
@@ -214,6 +244,71 @@ def items(update,context):
     else:
         update.message.reply_text("Unable to find item. Iceborne data not yet updated.")
 
+def deco(update,context):
+    # if user input command with no arguments (decoration names) after the command
+    if len(context.args) == 0:
+        update.message.reply_text("Command syntax is /deco <decoration name>")
+        return
+    skills = []
+    category = 'decorations'
+    name = " ".join(context.args)
+    name = name.lower()
+    if (name.find("jewel") >= 0) or (name.find("jewel+")>=0): #search terms have jewel in it.
+        if name[-1].isdigit():
+            name = name
+        else:
+            name = name + " 1"
+    else: #search terms have no jewel in it
+        name_list = name.split()
+        if name_list[-1].isdigit():
+            name_list.insert(-1,"Jewel")
+        else:
+            name_list.append("Jewel")
+            name_list.append("1")
+        name = " ".join(name_list)
+    result = search_db(category,name)
+    if result != 'invalid':
+        deco_name = result.get('name')
+        rarity = result.get('rarity')
+        slots = result.get('slot')
+        list_of_skills = result.get('skills')
+        for s in list_of_skills:
+            skill_name = s.get('skillName')
+            skill_level = s.get('level')
+            skill_message = "{}(lv. {})".format(skill_name,skill_level)
+            skills.append(skill_message)
+        skills_msg = ", ".join(skills)
+        update.message.reply_markdown("*Decoration:* {} \n*Rarity:* {} \n*Slots:* {} \n*Skills:* {}".format(deco_name,rarity,slots,skills_msg))
+    else:
+        update.message.reply_text("Unable to find decoration. Iceborne data not yet updated.")
+
+def skills(update,context):
+    if len(context.args) == 0:
+        update.message.reply_text("Command syntax is /items <item name>")
+        return
+
+    # declaration
+    category = 'skills'
+    name = " ".join(context.args)  # convert arguments from user message into 1 single string
+    result = search_db(category, name)
+    rank_details = []
+    if result != 'invalid':
+        skill_name = result.get('name')
+        description = result.get('description')
+        ranks = result.get('ranks')
+        for r in ranks:
+            level = r.get('level')
+            description = r.get('description')
+            rank_details.append("Level: {} \nDescription: {}".format(level, description))
+
+        #convert to messsage
+        rank_details_message = "\n".join(rank_details)
+        message = "*Name:* {} \n*Description:* {} \n*Ranks:* \n{}".format(skill_name,description,rank_details_message)
+        update.message.reply_markdown(message)
+    else:
+        update.message.reply_text("Unable to find decoration. Iceborne data not yet updated.")
+
+
 # def echo(update, context):
 #     """Echo the user message."""
 #     update.message.reply_text(update.message.text)
@@ -241,6 +336,8 @@ def main():
     dp.add_handler(CommandHandler("monsters", monsters))
     dp.add_handler(CommandHandler('weapons', weapons))
     dp.add_handler(CommandHandler('items', items))
+    dp.add_handler(CommandHandler('deco', deco))
+    dp.add_handler(CommandHandler('skills', skills))
 
     # on noncommand i.e message - echo the message on Telegram
     #dp.add_handler(MessageHandler(Filters.text, echo))
