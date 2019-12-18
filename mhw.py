@@ -24,8 +24,8 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 #TOKEN = '180665590:AAGEXQVVWTzpou9TBekb8oq59cjz2Fxp_gY' #ascension token
 #TOKEN = os.environ.get('TOKEN')
 
-TOKEN = Config.SECRET_KEY
-#TOKEN = os.environ.get('TOKEN')
+TOKEN = os.environ.get('TOKEN') or Config.SECRET_KEY
+
 
 # Enable logging
 logging.basicConfig(format='LOG: %(asctime)s - %(name)s - %(levelname)s - %(message)s',
