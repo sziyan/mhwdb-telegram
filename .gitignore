@@ -1,4 +1,6 @@
 venv/ 
-/app.py
+app.py
 /.idea
 /.git
+config.py
+/config.py

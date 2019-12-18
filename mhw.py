@@ -16,11 +16,16 @@ bot.
 import logging
 import requests
 import urllib.parse
-
+from config import Config
+import os
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 
-TOKEN = "827496100:AAEohD9TDG-F6fefu6MTqnuA86ktBdEta94" #mhwdb token
+#TOKEN = "827496100:AAEohD9TDG-F6fefu6MTqnuA86ktBdEta94" #mhwdb token
 #TOKEN = '180665590:AAGEXQVVWTzpou9TBekb8oq59cjz2Fxp_gY' #ascension token
+#TOKEN = os.environ.get('TOKEN')
+
+TOKEN = Config.SECRET_KEY
+#TOKEN = os.environ.get('TOKEN')
 
 # Enable logging
 logging.basicConfig(format='LOG: %(asctime)s - %(name)s - %(levelname)s - %(message)s',
