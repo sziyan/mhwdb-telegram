@@ -1,0 +1,9 @@
+venv/ 
+idea/
+.git/
+__pycache__/
+config.py
+delete_git.bat
+git_create.bat
+heroku_logs.bat
+Procfile
